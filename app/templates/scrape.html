@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Scrape — Jobber{% endblock %}
+
+{% block content %}
+
+<h1 class="text-white font-bold text-lg mb-4">Scraper</h1>
+
+<!-- Controls -->
+<div class="card rounded-xl p-4 mb-4">
+  <div class="flex items-center justify-between mb-3">
+    <div>
+      <p class="text-white text-sm font-medium">Daily Scrape</p>
+      {% if next_run %}
+      <p class="text-gray-500 text-xs">Next run: {{ next_run.strftime('%a %b %d · %H:%M') }}</p>
+      {% else %}
+      <p class="text-gray-500 text-xs">Scheduler active</p>
+      {% endif %}
+    </div>
+    <span class="tag" style="background:#14532d;color:#86efac;">Auto</span>
+  </div>
+
+  <div class="flex gap-2">
+    <button onclick="triggerScrape(this)" class="btn-primary flex-1 py-2.5 text-sm">
+      Run Now
+    </button>
+    <button onclick="triggerRank(this)" class="btn-ghost flex-1 py-2.5 text-sm">
+      Re-rank Jobs
+    </button>
+  </div>
+
+  <div id="scrape-msg" class="mt-2 text-center text-sm hidden"></div>
+</div>
+
+<!-- Boards being scraped -->
+<div class="card rounded-xl p-4 mb-4">
+  <h2 class="text-gray-400 text-sm font-semibold mb-2">Job Boards</h2>
+  <div class="grid grid-cols-2 gap-2">
+    {% for board in ['LinkedIn','Indeed','Glassdoor','ZipRecruiter','Google Jobs','Greenhouse','Lever'] %}
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span>
+      <span class="text-gray-300 text-xs">{{ board }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Run history -->
+<h2 class="text-gray-400 text-sm font-semibold mb-2">Recent Runs</h2>
+
+{% if not runs %}
+<div class="card rounded-xl p-6 text-center">
+  <p class="text-gray-500 text-sm">No scrape runs yet. Click "Run Now" to start.</p>
+</div>
+{% else %}
+<div class="space-y-2">
+{% for run in runs %}
+<div class="card rounded-xl p-3 flex items-center gap-3">
+  <!-- Status dot -->
+  <span class="w-2.5 h-2.5 rounded-full flex-shrink-0
+    {% if run.status == 'completed' %}bg-green-400
+    {% elif run.status == 'failed' %}bg-red-400
+    {% else %}bg-yellow-400 animate-pulse
+    {% endif %}"></span>
+
+  <div class="min-w-0 flex-1">
+    <div class="flex items-center gap-2">
+      <span class="text-white text-xs font-medium">{{ run.source or 'full' | replace('jobspy_','') | title }}</span>
+      <span class="text-gray-600 text-xs">{{ run.started_at.strftime('%b %d · %H:%M') }}</span>
+    </div>
+    {% if run.status == 'completed' %}
+    <p class="text-gray-400 text-xs">
+      {{ run.jobs_new }} new · {{ run.jobs_updated }} updated · {{ run.jobs_found }} found · {{ run.duration_str() }}
+    </p>
+    {% elif run.status == 'failed' %}
+    <p class="text-red-400 text-xs truncate">{{ run.error_message or 'Unknown error' }}</p>
+    {% else %}
+    <p class="text-yellow-400 text-xs">Running…</p>
+    {% endif %}
+  </div>
+
+  <span class="text-xs flex-shrink-0
+    {% if run.status == 'completed' %}text-green-400
+    {% elif run.status == 'failed' %}text-red-400
+    {% else %}text-yellow-400
+    {% endif %}">
+    {{ run.status }}
+  </span>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<script>
+async function triggerScrape(btn) {
+  btn.disabled = true;
+  btn.textContent = 'Starting…';
+  const msg = document.getElementById('scrape-msg');
+  try {
+    const res = await fetch('/scrape/trigger', {method: 'POST'});
+    const data = await res.json();
+    msg.textContent = data.message;
+    msg.className = `mt-2 text-center text-sm ${data.ok ? 'text-green-400' : 'text-yellow-400'}`;
+    msg.classList.remove('hidden');
+    if (data.ok) setTimeout(() => location.reload(), 3000);
+  } catch(e) {
+    msg.textContent = 'Failed to start scrape';
+    msg.className = 'mt-2 text-center text-sm text-red-400';
+    msg.classList.remove('hidden');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Run Now';
+}
+
+async function triggerRank(btn) {
+  btn.disabled = true;
+  btn.textContent = 'Starting…';
+  const msg = document.getElementById('scrape-msg');
+  try {
+    const res = await fetch('/scrape/rank', {method: 'POST'});
+    const data = await res.json();
+    msg.textContent = data.message;
+    msg.className = 'mt-2 text-center text-sm text-green-400';
+    msg.classList.remove('hidden');
+  } catch(e) {}
+  btn.disabled = false;
+  btn.textContent = 'Re-rank Jobs';
+}
+</script>
+
+{% endblock %}

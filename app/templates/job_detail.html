@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} — Jobber{% endblock %}
+
+{% block content %}
+
+<!-- Back -->
+<a href="/" class="inline-flex items-center gap-1 text-sm text-gray-400 mb-4">
+  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+  Back to feed
+</a>
+
+<!-- Company + Score header -->
+<div class="card rounded-xl p-4 mb-4">
+  <div class="flex items-start justify-between gap-3">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center text-white font-bold text-lg"
+           style="background:#4f46e5;">
+        {{ job.company_initial }}
+      </div>
+      <div class="min-w-0">
+        <p class="text-gray-400 text-sm">{{ job.company }}</p>
+        <h1 class="text-white font-bold text-base leading-tight">{{ job.title }}</h1>
+      </div>
+    </div>
+    <!-- Score -->
+    <div class="flex-shrink-0 text-center">
+      {% if job.rank_score is not none %}
+      <div class="score-{{ job.score_color }} rounded-xl px-3 py-2">
+        <span class="text-white font-bold text-2xl">{{ job.rank_score }}</span>
+        <p class="text-white text-xs opacity-80 whitespace-nowrap">{{ job.score_label }}</p>
+      </div>
+      {% else %}
+      <div class="score-gray rounded-xl px-3 py-2">
+        <span class="text-gray-400 font-bold text-2xl">?</span>
+        <p class="text-gray-500 text-xs">Unranked</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Meta tags -->
+  <div class="flex flex-wrap gap-1.5 mt-3">
+    {% if job.location %}<span class="tag">📍 {{ job.location }}</span>{% endif %}
+    {% if job.is_remote %}
+    <span class="tag" style="background:#14532d;color:#86efac;">Remote</span>
+    {% elif job.is_hybrid %}
+    <span class="tag" style="background:#1e3a5f;color:#93c5fd;">Hybrid</span>
+    {% else %}
+    <span class="tag">On-site</span>
+    {% endif %}
+    {% if job.job_type %}<span class="tag">{{ job.job_type }}</span>{% endif %}
+    {% if job.salary_min or job.salary_max %}
+    <span class="tag" style="color:#fbbf24;">
+      💰
+      {% if job.salary_min %}${{ '{:,}'.format(job.salary_min) }}{% endif %}
+      {% if job.salary_min and job.salary_max %}–{% endif %}
+      {% if job.salary_max %}${{ '{:,}'.format(job.salary_max) }}{% endif %}
+      {{ job.salary_currency or 'CAD' }}
+    </span>
+    {% endif %}
+    <span class="tag" style="color:#6b7280;">{{ job.source.replace('jobspy_','') | title }}</span>
+    <span class="tag" style="color:#6b7280;">{{ job.timeago() }}</span>
+  </div>
+</div>
+
+<!-- AI Ranking breakdown -->
+{% if job.rank_score is not none %}
+<div class="card rounded-xl p-4 mb-4">
+  <h2 class="text-indigo-400 font-semibold text-sm mb-2">AI Analysis</h2>
+  {% if job.rank_summary %}
+  <p class="text-gray-300 text-sm leading-relaxed mb-3">{{ job.rank_summary }}</p>
+  {% endif %}
+  <div class="grid grid-cols-1 gap-3">
+    {% if job.rank_match_reasons %}
+    <div>
+      <p class="text-green-400 text-xs font-semibold mb-1.5">✓ Match reasons</p>
+      <ul class="space-y-1">
+        {% for reason in job.rank_match_reasons %}
+        <li class="text-gray-300 text-xs flex items-start gap-2"><span class="text-green-400 mt-0.5">•</span>{{ reason }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if job.rank_concerns %}
+    <div>
+      <p class="text-yellow-400 text-xs font-semibold mb-1.5">⚠ Concerns</p>
+      <ul class="space-y-1">
+        {% for concern in job.rank_concerns %}
+        <li class="text-gray-300 text-xs flex items-start gap-2"><span class="text-yellow-400 mt-0.5">•</span>{{ concern }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Status + actions -->
+<div class="card rounded-xl p-4 mb-4"
+     x-data="{
+       status: '{{ job.status }}',
+       notes: `{{ job.user_notes | default('', true) | replace('`', "'") }}`,
+       saved: false,
+       async setJobStatus(s) {
+         this.status = s;
+         await fetch('/jobs/{{ job.id }}/status', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:s})});
+       },
+       async saveNotes() {
+         await fetch('/jobs/{{ job.id }}/status', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:this.status, notes:this.notes})});
+         this.saved = true;
+         setTimeout(() => this.saved = false, 2000);
+       }
+     }">
+  <h2 class="text-gray-400 text-sm font-semibold mb-3">Your Status</h2>
+
+  <div class="flex gap-2 flex-wrap">
+    <button @click="setJobStatus('saved')"
+            :class="status === 'saved' ? 'bg-green-700 text-green-200' : 'bg-[#14532d] text-green-300'"
+            class="text-sm py-2 px-4 rounded-lg font-medium">★ Save</button>
+    <button @click="setJobStatus('applied')"
+            :class="status === 'applied' ? 'bg-indigo-700 text-indigo-200' : 'bg-indigo-600 text-white'"
+            class="text-sm py-2 px-4 rounded-lg font-medium">✓ Applied</button>
+    <button @click="setJobStatus('rejected')"
+            :class="status === 'rejected' ? 'bg-red-900 text-red-300' : 'bg-[#7f1d1d] text-red-300'"
+            class="text-sm py-2 px-4 rounded-lg font-medium">✗ Skip</button>
+    <a href="{{ job.url }}" target="_blank" class="btn-ghost text-sm py-2 px-4 ml-auto">Apply ↗</a>
+  </div>
+
+  <div class="mt-3">
+    <textarea x-model="notes" placeholder="Add notes…" rows="2"
+              class="input text-sm resize-none" style="font-size:14px;"></textarea>
+    <div class="flex items-center gap-3 mt-2">
+      <button @click="saveNotes()" class="btn-ghost text-xs">Save notes</button>
+      <span x-show="saved" x-transition class="text-green-400 text-xs">Saved ✓</span>
+    </div>
+  </div>
+</div>
+
+<!-- Generate Application -->
+<div class="card rounded-xl p-4 mb-4"
+     x-data="{
+       loading: false,
+       generated: false,
+       error: '',
+       bullets: [],
+       coverLetter: '',
+       subjectLine: '',
+       copiedBullets: false,
+       copiedLetter: false,
+       copiedSubject: false,
+       async generate() {
+         this.loading = true;
+         this.error = '';
+         try {
+           const res = await fetch('/jobs/{{ job.id }}/generate-application', {method: 'POST'});
+           if (!res.ok) throw new Error(await res.text());
+           const data = await res.json();
+           this.bullets = data.resume_bullets || [];
+           this.coverLetter = data.cover_letter || '';
+           this.subjectLine = data.subject_line || '';
+           this.generated = true;
+         } catch(e) {
+           this.error = 'Generation failed — check your profile and API key.';
+         } finally {
+           this.loading = false;
+         }
+       },
+       copy(text, field) {
+         navigator.clipboard.writeText(text);
+         this[field] = true;
+         setTimeout(() => this[field] = false, 2000);
+       }
+     }">
+
+  <div class="flex items-center justify-between mb-3">
+    <div>
+      <h2 class="text-indigo-400 font-semibold text-sm">Generate Application</h2>
+      <p class="text-gray-500 text-xs mt-0.5">AI-tailored resume bullets + cover letter with your AI stack story</p>
+    </div>
+    <button @click="generate()"
+            :disabled="loading"
+            class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+      <span x-show="!loading">Generate ✨</span>
+      <span x-show="loading" class="flex items-center gap-2">
+        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+        Generating…
+      </span>
+    </button>
+  </div>
+
+  <p x-show="error" x-text="error" class="text-red-400 text-xs mt-2"></p>
+
+  <div x-show="generated" x-transition>
+
+    <!-- Subject line -->
+    <div class="mt-3">
+      <div class="flex items-center justify-between mb-1.5">
+        <p class="text-gray-400 text-xs font-semibold">Email Subject</p>
+        <button @click="copy(subjectLine, 'copiedSubject')"
+                class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+          <span x-show="!copiedSubject">Copy</span>
+          <span x-show="copiedSubject" class="text-green-400">Copied ✓</span>
+        </button>
+      </div>
+      <p x-text="subjectLine" class="text-gray-300 text-sm bg-[#0f1117] rounded-lg px-3 py-2"></p>
+    </div>
+
+    <!-- Resume bullets -->
+    <div class="mt-4">
+      <div class="flex items-center justify-between mb-1.5">
+        <p class="text-gray-400 text-xs font-semibold">Tailored Resume Bullets</p>
+        <button @click="copy(bullets.map(b => '• ' + b).join('\n'), 'copiedBullets')"
+                class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+          <span x-show="!copiedBullets">Copy all</span>
+          <span x-show="copiedBullets" class="text-green-400">Copied ✓</span>
+        </button>
+      </div>
+      <ul class="space-y-2">
+        <template x-for="bullet in bullets" :key="bullet">
+          <li class="text-gray-300 text-xs leading-relaxed flex items-start gap-2 bg-[#0f1117] rounded-lg px-3 py-2">
+            <span class="text-indigo-400 mt-0.5 flex-shrink-0">•</span>
+            <span x-text="bullet"></span>
+          </li>
+        </template>
+      </ul>
+    </div>
+
+    <!-- Cover letter -->
+    <div class="mt-4">
+      <div class="flex items-center justify-between mb-1.5">
+        <p class="text-gray-400 text-xs font-semibold">Cover Letter</p>
+        <button @click="copy(coverLetter, 'copiedLetter')"
+                class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+          <span x-show="!copiedLetter">Copy</span>
+          <span x-show="copiedLetter" class="text-green-400">Copied ✓</span>
+        </button>
+      </div>
+      <div x-html="coverLetter.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')"
+           class="text-gray-300 text-xs leading-relaxed bg-[#0f1117] rounded-lg px-3 py-3"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Description -->
+{% if job.description_raw %}
+<div class="card rounded-xl p-4 mb-4">
+  <h2 class="text-gray-400 text-sm font-semibold mb-3">Job Description</h2>
+  <div class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap break-words max-h-[600px] overflow-y-auto"
+       style="word-break:break-word;">{{ job.description_raw[:5000] }}</div>
+  {% if job.description_raw | length > 5000 %}
+  <a href="{{ job.url }}" target="_blank" class="text-indigo-400 text-xs mt-2 inline-block">See full description ↗</a>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="py-6 text-center">
+  <a href="{{ job.url }}" target="_blank" class="btn-primary text-sm px-6 py-3 inline-block">
+    View & Apply on {{ job.source.replace('jobspy_','') | title }} ↗
+  </a>
+</div>
+
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Feed — Jobber{% endblock %}
+
+{% block content %}
+
+<!-- Filter bar -->
+<div class="sticky top-14 z-40 py-2 -mx-3 px-3" style="background:#0d0f1a;border-bottom:1px solid #2a2f52;">
+
+  <!-- Status tabs -->
+  <div class="flex gap-1 overflow-x-auto pb-1 scrollbar-hide" style="scrollbar-width:none;">
+    {% set tab_statuses = [('new','New'), ('saved','Saved'), ('all','All')] %}
+    {% for s, label in tab_statuses %}
+    <a href="/?status={{ s }}{% if active_source %}&source={{ active_source }}{% endif %}"
+       class="flex-shrink-0 px-3 py-1 rounded-full text-sm font-medium transition-colors
+              {% if active_status == s %}bg-indigo-600 text-white{% else %}text-gray-400 hover:text-white{% endif %}">
+      {{ label }}
+      {% if counts.get(s) %}
+        <span class="ml-1 text-xs {% if active_status == s %}opacity-80{% else %}opacity-50{% endif %}">{{ counts[s] }}</span>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Score + source filters -->
+  <div class="flex gap-2 mt-2">
+    <select onchange="applyFilters(this)"
+            class="input text-sm flex-1" id="score-filter">
+      <option value="" {% if not min_score %}selected{% endif %}>All scores</option>
+      <option value="80" {% if min_score == 80 %}selected{% endif %}>Great Match (80+)</option>
+      <option value="60" {% if min_score == 60 %}selected{% endif %}>Good+ (60+)</option>
+      <option value="40" {% if min_score == 40 %}selected{% endif %}>Maybe+ (40+)</option>
+    </select>
+    {% if sources %}
+    <select onchange="applyFilters(this)"
+            class="input text-sm flex-1" id="source-filter">
+      <option value="">All boards</option>
+      {% for src in sources %}
+      <option value="{{ src }}" {% if active_source == src %}selected{% endif %}>{{ src.replace('jobspy_','') | title }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Results count -->
+<p class="text-xs text-gray-500 mt-3 mb-2 px-1">
+  {{ jobs | length }} job{{ 's' if jobs | length != 1 else '' }}
+  {% if active_status != 'all' %} · {{ active_status }}{% endif %}
+  {% if min_score %} · score ≥ {{ min_score }}{% endif %}
+</p>
+
+<!-- No profile banner -->
+{% if jobs and jobs[0].rank_score is none %}
+<div class="card rounded-xl p-3 mb-3 flex items-start gap-3">
+  <span class="text-yellow-400 text-lg">💡</span>
+  <div>
+    <p class="text-sm font-medium text-yellow-300">No profile yet</p>
+    <p class="text-xs text-gray-400 mt-0.5">Add your resume in <a href="/profile" class="text-indigo-400 underline">Profile</a> to enable AI ranking.</p>
+  </div>
+</div>
+{% endif %}
+
+<!-- Job cards -->
+{% if not jobs %}
+<div class="flex flex-col items-center justify-center py-16 text-center">
+  <div class="text-4xl mb-3">🔍</div>
+  <p class="text-gray-400 font-medium">No jobs found</p>
+  <p class="text-gray-600 text-sm mt-1">
+    {% if active_status == 'new' %}
+      Run a scrape to fetch new listings.
+    {% else %}
+      Try a different filter.
+    {% endif %}
+  </p>
+  <a href="/scrape" class="btn-primary mt-4 inline-block">Run Scrape</a>
+</div>
+{% endif %}
+
+<div class="space-y-3">
+{% for job in jobs %}
+<div id="job-{{ job.id }}" class="card rounded-xl p-4 transition-opacity">
+
+  <!-- Header row -->
+  <div class="flex items-start justify-between gap-2">
+    <div class="flex items-center gap-3 min-w-0">
+      <!-- Company avatar -->
+      <div class="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-sm"
+           style="background: {{ ['#4f46e5','#0891b2','#059669','#7c3aed','#db2777','#b45309'] | random }};">
+        {{ job.company_initial }}
+      </div>
+      <div class="min-w-0">
+        <p class="text-gray-400 text-xs truncate">{{ job.company }}</p>
+        <p class="text-white font-semibold text-sm leading-tight line-clamp-2">{{ job.title }}</p>
+      </div>
+    </div>
+
+    <!-- Score badge -->
+    <div class="flex-shrink-0 flex flex-col items-center">
+      {% if job.rank_score is not none %}
+      <span class="score-{{ job.score_color }} rounded-lg px-2 py-1 text-white font-bold text-sm min-w-[2.5rem] text-center">
+        {{ job.rank_score }}
+      </span>
+      <span class="text-gray-500 text-xs mt-0.5 whitespace-nowrap">{{ job.score_label }}</span>
+      {% else %}
+      <span class="score-gray rounded-lg px-2 py-1 text-gray-400 text-xs font-medium">?</span>
+      <span class="text-gray-600 text-xs mt-0.5">Unranked</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Tags row -->
+  <div class="flex flex-wrap gap-1.5 mt-3">
+    {% if job.location %}
+    <span class="tag">📍 {{ job.location }}</span>
+    {% endif %}
+    {% if job.is_remote %}
+    <span class="tag" style="background:#14532d;color:#86efac;">Remote</span>
+    {% elif job.is_hybrid %}
+    <span class="tag" style="background:#1e3a5f;color:#93c5fd;">Hybrid</span>
+    {% else %}
+    <span class="tag">On-site</span>
+    {% endif %}
+    {% if job.job_type %}
+    <span class="tag">{{ job.job_type | replace('fulltime','Full-time') | replace('parttime','Part-time') }}</span>
+    {% endif %}
+    <span class="tag" style="background:#1a1a2e;color:#6b7280;">{{ job.source.replace('jobspy_','') | title }}</span>
+    {% if job.timeago() %}
+    <span class="tag" style="background:#1a1a2e;color:#6b7280;">{{ job.timeago() }}</span>
+    {% endif %}
+  </div>
+
+  <!-- AI summary if available -->
+  {% if job.rank_summary %}
+  <p class="text-gray-400 text-xs mt-2 leading-relaxed line-clamp-2">{{ job.rank_summary }}</p>
+  {% endif %}
+
+  <!-- Action buttons -->
+  <div class="flex gap-2 mt-3">
+    {% if job.status == 'new' %}
+    <button onclick="setStatus({{ job.id }}, 'saved', this)" class="btn-success text-xs py-2 px-3 flex-1">Save</button>
+    <button onclick="setStatus({{ job.id }}, 'rejected', this)" class="btn-ghost text-xs py-2 px-3 flex-1">Skip</button>
+    {% elif job.status == 'saved' %}
+    <button onclick="setStatus({{ job.id }}, 'applied', this)" class="btn-primary text-xs py-2 px-3 flex-1">Mark Applied</button>
+    <button onclick="setStatus({{ job.id }}, 'rejected', this)" class="btn-ghost text-xs py-2 px-3">Skip</button>
+    {% else %}
+    <span class="tag text-xs py-1">{{ job.status | title }}</span>
+    {% endif %}
+    <a href="/jobs/{{ job.id }}" class="btn-ghost text-xs py-2 px-3 ml-auto">View →</a>
+  </div>
+</div>
+{% endfor %}
+</div>
+
+<script>
+function applyFilters(el) {
+  const params = new URLSearchParams(window.location.search);
+  const scoreVal = document.getElementById('score-filter')?.value;
+  const sourceEl = document.getElementById('source-filter');
+  const sourceVal = sourceEl ? sourceEl.value : '';
+
+  if (scoreVal) params.set('min_score', scoreVal);
+  else params.delete('min_score');
+
+  if (sourceVal) params.set('source', sourceVal);
+  else params.delete('source');
+
+  window.location.search = params.toString();
+}
+</script>
+
+{% endblock %}

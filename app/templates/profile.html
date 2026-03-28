@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Profile — Jobber{% endblock %}
+
+{% block content %}
+
+<h1 class="text-white font-bold text-lg mb-1">Your Profile</h1>
+<p class="text-gray-500 text-sm mb-4">Claude uses this to rank jobs. The more detail, the better.</p>
+
+{% if saved %}
+<div class="card rounded-xl p-3 mb-4 flex items-center gap-2">
+  <span class="text-green-400">✓</span>
+  <span class="text-green-300 text-sm">Profile saved</span>
+</div>
+{% endif %}
+
+{% if not profile or not profile.has_content %}
+<div class="card rounded-xl p-3 mb-4 flex items-start gap-2">
+  <span class="text-yellow-400">💡</span>
+  <p class="text-yellow-300 text-sm">Add your resume below to unlock AI-powered job ranking.</p>
+</div>
+{% endif %}
+
+<!-- Resume form -->
+<form method="post" action="/profile">
+  <div class="card rounded-xl p-4 mb-4">
+    <h2 class="text-indigo-400 font-semibold text-sm mb-2">Resume / Experience</h2>
+    <p class="text-gray-500 text-xs mb-3">Paste your resume, LinkedIn summary, or a description of your experience. Plain text or markdown.</p>
+    <textarea name="resume_md" rows="14" class="input text-sm resize-none leading-relaxed"
+              placeholder="e.g.
+5 years of experience as a Full Stack Developer...
+Skills: React, TypeScript, Node.js, Python, PostgreSQL...
+Recent role: Senior Developer at Acme Corp...
+Education: BSc Computer Science, UBC...">{{ profile.resume_md or '' }}</textarea>
+  </div>
+
+  <div class="card rounded-xl p-4 mb-4">
+    <h2 class="text-indigo-400 font-semibold text-sm mb-3">Quick Info</h2>
+    <div class="space-y-3">
+      <div>
+        <label class="text-gray-400 text-xs block mb-1">Years of experience</label>
+        <input type="number" name="experience_years" min="0" max="50"
+               value="{{ profile.experience_years or '' }}"
+               class="input text-sm" placeholder="e.g. 5" />
+      </div>
+      <div>
+        <label class="text-gray-400 text-xs block mb-1">Additional notes for the ranker</label>
+        <textarea name="notes" rows="3" class="input text-sm resize-none"
+                  placeholder="e.g. I prefer startups, avoid banking/finance, strong preference for TypeScript...">{{ profile.notes or '' }}</textarea>
+      </div>
+    </div>
+  </div>
+
+  <button type="submit" class="btn-primary w-full text-center py-3 mb-6">Save Profile</button>
+</form>
+
+<!-- Company watchlist -->
+<div class="card rounded-xl p-4 mb-4">
+  <h2 class="text-indigo-400 font-semibold text-sm mb-1">Company Watchlist</h2>
+  <p class="text-gray-500 text-xs mb-3">Add specific companies to monitor via their ATS (Greenhouse/Lever). Jobs not listed on boards will be found here.</p>
+
+  {% if watchlist %}
+  <div class="space-y-2 mb-3">
+    {% for entry in watchlist %}
+    <div class="flex items-center gap-2">
+      <div class="min-w-0 flex-1">
+        <p class="text-white text-sm truncate">{{ entry.name }}</p>
+        <p class="text-gray-500 text-xs">{{ entry.ats_type }} · <code class="text-indigo-400">{{ entry.ats_slug }}</code></p>
+      </div>
+      <form method="post" action="/profile/watchlist/{{ entry.id }}/delete" class="flex-shrink-0">
+        <button type="submit" class="text-red-400 text-xs px-2 py-1 rounded hover:bg-red-900">Remove</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form method="post" action="/profile/watchlist/add" class="space-y-2">
+    <input type="text" name="name" required placeholder="Company name (e.g. Shopify)"
+           class="input text-sm" />
+    <div class="flex gap-2">
+      <select name="ats_type" required class="input text-sm flex-1">
+        <option value="">ATS type…</option>
+        <option value="greenhouse">Greenhouse</option>
+        <option value="lever">Lever</option>
+        <option value="ashby">Ashby</option>
+      </select>
+      <input type="text" name="ats_slug" required placeholder="slug (e.g. shopify)"
+             class="input text-sm flex-1" />
+    </div>
+    <p class="text-gray-600 text-xs">Greenhouse slug = boards.greenhouse.io/v1/boards/<strong>slug</strong> · Lever = jobs.lever.co/<strong>slug</strong></p>
+    <button type="submit" class="btn-ghost text-sm w-full py-2">+ Add Company</button>
+  </form>
+</div>
+
+<!-- Target info display -->
+<div class="card rounded-xl p-4 mb-4">
+  <h2 class="text-gray-400 font-semibold text-sm mb-2">Search Configuration</h2>
+  <div class="space-y-1 text-xs text-gray-500">
+    <p><span class="text-gray-300">Target roles:</span> Software Developer, Software Engineer, Full Stack Developer/Engineer</p>
+    <p><span class="text-gray-300">Location:</span> Vancouver, BC, Canada</p>
+    <p><span class="text-gray-300">Work type:</span> On-site or Hybrid</p>
+    <p><span class="text-gray-300">Salary filter:</span> None</p>
+  </div>
+</div>
+
+{% endblock %}

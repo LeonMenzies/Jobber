@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Applied — Jobber{% endblock %}
+
+{% block content %}
+
+<h1 class="text-white font-bold text-lg mb-4">Tracking</h1>
+
+<!-- Saved jobs -->
+{% if saved_jobs %}
+<h2 class="text-indigo-400 text-sm font-semibold mb-2">Saved ({{ saved_jobs | length }})</h2>
+<div class="space-y-2 mb-6">
+{% for job in saved_jobs %}
+<div id="job-{{ job.id }}" class="card rounded-xl p-3 flex items-center gap-3">
+  <div class="w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-sm"
+       style="background:#4f46e5;">{{ job.company_initial }}</div>
+  <div class="min-w-0 flex-1">
+    <a href="/jobs/{{ job.id }}" class="text-white text-sm font-medium truncate block">{{ job.title }}</a>
+    <p class="text-gray-500 text-xs truncate">{{ job.company }} · {{ job.timeago() }}</p>
+  </div>
+  {% if job.rank_score is not none %}
+  <span class="score-{{ job.score_color }} rounded-lg px-2 py-1 text-white text-xs font-bold flex-shrink-0">{{ job.rank_score }}</span>
+  {% endif %}
+  <button onclick="setStatus({{ job.id }}, 'applied', this)" class="btn-primary text-xs py-1.5 px-3 flex-shrink-0">Apply</button>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<!-- Applied jobs -->
+<h2 class="text-green-400 text-sm font-semibold mb-2">Applied ({{ applied_jobs | length }})</h2>
+{% if not applied_jobs %}
+<div class="card rounded-xl p-6 text-center">
+  <p class="text-gray-500 text-sm">No applications tracked yet.</p>
+  <p class="text-gray-600 text-xs mt-1">Mark jobs as applied from the feed or job detail page.</p>
+</div>
+{% else %}
+<div class="space-y-2">
+{% for job in applied_jobs %}
+<div id="job-{{ job.id }}" class="card rounded-xl p-3 flex items-center gap-3">
+  <div class="w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-sm"
+       style="background:#059669;">{{ job.company_initial }}</div>
+  <div class="min-w-0 flex-1">
+    <a href="/jobs/{{ job.id }}" class="text-white text-sm font-medium truncate block">{{ job.title }}</a>
+    <p class="text-gray-500 text-xs truncate">{{ job.company }}</p>
+    {% if job.applied_at %}
+    <p class="text-green-600 text-xs">Applied {{ job.timeago() }}</p>
+    {% endif %}
+  </div>
+  {% if job.rank_score is not none %}
+  <span class="score-{{ job.score_color }} rounded-lg px-2 py-1 text-white text-xs font-bold flex-shrink-0">{{ job.rank_score }}</span>
+  {% endif %}
+  <a href="{{ job.url }}" target="_blank" class="btn-ghost text-xs py-1.5 px-3 flex-shrink-0">↗</a>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}
