@@ -105,6 +105,17 @@ class Profile(Base):
     notes = Column(Text)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
+    # Job preference questionnaire fields
+    work_arrangement = Column(ARRAY(Text), default=list)
+    seniority_levels = Column(ARRAY(Text), default=list)
+    preferred_industries = Column(ARRAY(Text), default=list)
+    excluded_industries = Column(ARRAY(Text), default=list)
+    company_sizes = Column(ARRAY(Text), default=list)
+    salary_min_cad = Column(Integer)
+    tech_stack_preferences = Column(ARRAY(Text), default=list)
+    open_to_contract = Column(Boolean, default=False)
+    excluded_companies = Column(ARRAY(Text), default=list)
+
     @property
     def has_content(self) -> bool:
         return bool(self.resume_md and self.resume_md.strip())

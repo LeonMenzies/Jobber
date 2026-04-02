@@ -8,7 +8,18 @@ CREATE TABLE IF NOT EXISTS profile (
     target_locations TEXT[] DEFAULT ARRAY['Vancouver, BC', 'Vancouver, British Columbia'],
     experience_years INTEGER,
     notes TEXT,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Job preference questionnaire
+    work_arrangement TEXT[] DEFAULT '{}',
+    seniority_levels TEXT[] DEFAULT '{}',
+    preferred_industries TEXT[] DEFAULT '{}',
+    excluded_industries TEXT[] DEFAULT '{}',
+    company_sizes TEXT[] DEFAULT '{}',
+    salary_min_cad INTEGER,
+    tech_stack_preferences TEXT[] DEFAULT '{}',
+    open_to_contract BOOLEAN DEFAULT FALSE,
+    excluded_companies TEXT[] DEFAULT '{}'
 );
 
 -- Insert default profile seeded with Leon's resume
@@ -50,6 +61,17 @@ Coursework: Algorithms & Data Structures, System Design, Databases, Cybersecurit
 **Macro Dash** — Full-stack economic dashboard; Python Flask API + MySQL backend, React/TypeScript frontend, deployed on Linode with Nginx/Gunicorn and CI/CD pipelines
 **Fitness App** — Cross-platform React Native/Expo app with Flask backend, JWT + Sign In with Apple, AI-generated workout plans, Recoil state management
 $$) ON CONFLICT DO NOTHING;
+
+-- Migration: add questionnaire columns to existing profile rows
+ALTER TABLE profile ADD COLUMN IF NOT EXISTS work_arrangement TEXT[] DEFAULT '{}';
+ALTER TABLE profile ADD COLUMN IF NOT EXISTS seniority_levels TEXT[] DEFAULT '{}';
+ALTER TABLE profile ADD COLUMN IF NOT EXISTS preferred_industries TEXT[] DEFAULT '{}';
+ALTER TABLE profile ADD COLUMN IF NOT EXISTS excluded_industries TEXT[] DEFAULT '{}';
+ALTER TABLE profile ADD COLUMN IF NOT EXISTS company_sizes TEXT[] DEFAULT '{}';
+ALTER TABLE profile ADD COLUMN IF NOT EXISTS salary_min_cad INTEGER;
+ALTER TABLE profile ADD COLUMN IF NOT EXISTS tech_stack_preferences TEXT[] DEFAULT '{}';
+ALTER TABLE profile ADD COLUMN IF NOT EXISTS open_to_contract BOOLEAN DEFAULT FALSE;
+ALTER TABLE profile ADD COLUMN IF NOT EXISTS excluded_companies TEXT[] DEFAULT '{}';
 
 CREATE TABLE IF NOT EXISTS jobs (
     id SERIAL PRIMARY KEY,
