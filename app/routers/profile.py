@@ -52,6 +52,7 @@ def save_profile(
     tech_stack_preferences: str = Form("[]"),
     open_to_contract: str = Form("false"),
     excluded_companies: str = Form(""),
+    ai_setup_notes: str = Form(""),
     db: Session = Depends(get_db),
 ):
     profile = db.query(Profile).filter_by(id=1).first()
@@ -85,6 +86,8 @@ def save_profile(
         profile.excluded_companies = [c.strip() for c in excluded_companies.split(",") if c.strip()]
     else:
         profile.excluded_companies = []
+
+    profile.ai_setup_notes = ai_setup_notes.strip() or None
 
     profile.updated_at = datetime.now(timezone.utc)
     db.commit()

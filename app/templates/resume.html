@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leon Menzies — {{ job.title }} at {{ job.company }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & base ──────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 11pt;
+      color: #111;
+      background: #f0f0f0;
+      line-height: 1.5;
+    }
+
+    /* ── Screen: toolbar ───────────────────────────── */
+    .toolbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 100;
+      font-size: 13px;
+    }
+    .toolbar-left { display: flex; align-items: center; gap: 12px; }
+    .toolbar-title { font-weight: 600; color: #cba6f7; }
+    .toolbar-sub { color: #6c7086; font-size: 12px; }
+    .btn-print {
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-print:hover { background: #6d28d9; }
+    .btn-back { color: #89b4fa; text-decoration: none; font-size: 12px; }
+    .btn-back:hover { text-decoration: underline; }
+
+    /* ── Screen: pages wrapper ─────────────────────── */
+    .pages-wrapper {
+      padding: 72px 20px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    /* ── A4 page ───────────────────────────────────── */
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      background: #fff;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+      padding: 18mm 18mm 16mm;
+      position: relative;
+    }
+
+    /* ── Page 1: Resume ────────────────────────────── */
+
+    .resume-header { margin-bottom: 14px; }
+    .resume-name { font-size: 26pt; font-weight: 700; letter-spacing: -0.5px; color: #111; }
+    .resume-tagline { font-size: 11pt; color: #444; margin-top: 2px; }
+    .resume-contact {
+      font-size: 9.5pt;
+      color: #555;
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 18px;
+    }
+    .resume-contact a { color: #4f46e5; text-decoration: none; }
+
+    .divider { border: none; border-top: 1.5px solid #e0e0e0; margin: 10px 0; }
+    .divider-thin { border: none; border-top: 0.5px solid #e8e8e8; margin: 8px 0; }
+
+    .section { margin-bottom: 14px; }
+    .section-title {
+      font-size: 9pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #4f46e5;
+      margin-bottom: 8px;
+    }
+
+    .summary-text { font-size: 10.5pt; color: #222; line-height: 1.6; }
+
+    .exp-entry { margin-bottom: 12px; }
+    .exp-entry:last-child { margin-bottom: 0; }
+    .exp-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .exp-title { font-size: 10.5pt; font-weight: 600; color: #111; }
+    .exp-dates { font-size: 9.5pt; color: #666; white-space: nowrap; flex-shrink: 0; }
+    .exp-company { font-size: 9.5pt; color: #444; margin-top: 1px; margin-bottom: 5px; }
+    .exp-bullets { padding-left: 16px; }
+    .exp-bullets li { font-size: 9.5pt; color: #222; margin-bottom: 3px; line-height: 1.5; }
+
+    .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; }
+    .skill-item { font-size: 9.5pt; color: #333; display: flex; align-items: center; gap: 6px; }
+    .skill-item::before { content: "▸"; color: #4f46e5; font-size: 8pt; }
+
+    .edu-degree { font-size: 10.5pt; font-weight: 600; color: #111; }
+    .edu-school { font-size: 9.5pt; color: #444; }
+    .edu-detail { font-size: 9.5pt; color: #555; margin-top: 1px; }
+
+    .project-entry { margin-bottom: 8px; }
+    .project-entry:last-child { margin-bottom: 0; }
+    .project-name { font-size: 9.5pt; font-weight: 600; color: #111; display: inline; }
+    .project-desc { font-size: 9.5pt; color: #333; display: inline; }
+
+    /* ── Page 2: How I Work ────────────────────────── */
+
+    .how-header { margin-bottom: 16px; }
+    .how-label {
+      font-size: 8pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #7c3aed;
+      margin-bottom: 6px;
+    }
+    .how-title {
+      font-size: 20pt;
+      font-weight: 700;
+      color: #111;
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+    .how-intro {
+      font-size: 9.5pt;
+      color: #333;
+      line-height: 1.65;
+      margin-bottom: 14px;
+    }
+    .how-intro p + p { margin-top: 6px; }
+
+    /* Two-column layout */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 0 24px;
+      margin-top: 14px;
+    }
+    .col-title {
+      font-size: 9pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #4f46e5;
+      margin-bottom: 10px;
+    }
+
+    /* Left: stack table */
+    .stack-table { width: 100%; border-collapse: collapse; }
+    .stack-table tr { border-bottom: 0.5px solid #f0f0f0; }
+    .stack-table tr:last-child { border-bottom: none; }
+    .stack-table td { padding: 6px 0; vertical-align: top; }
+    .stack-tool {
+      font-size: 9pt;
+      font-weight: 600;
+      color: #111;
+      white-space: nowrap;
+      padding-right: 12px;
+      width: 30%;
+    }
+    .stack-desc { font-size: 8.5pt; color: #444; line-height: 1.5; }
+
+    /* Right: impact list */
+    .impact-list { display: flex; flex-direction: column; gap: 10px; }
+    .impact-item { }
+    .impact-head {
+      font-size: 9pt;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 2px;
+    }
+    .impact-body { font-size: 8.5pt; color: #444; line-height: 1.5; }
+
+    /* Projects built strip */
+    .built-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px 14px;
+      margin-top: 8px;
+    }
+    .built-name { font-size: 8.5pt; font-weight: 600; color: #111; display: block; }
+    .built-tech { font-size: 7.5pt; color: #4f46e5; display: block; margin-top: 1px; }
+    .built-desc { font-size: 7.5pt; color: #666; display: block; margin-top: 2px; line-height: 1.4; }
+
+    /* Footer */
+    .page-footer {
+      position: absolute;
+      bottom: 12mm;
+      left: 18mm;
+      right: 18mm;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 0.5px solid #e8e8e8;
+      padding-top: 6px;
+    }
+    .page-footer span { font-size: 7.5pt; color: #aaa; }
+
+    /* ── Print ─────────────────────────────────────── */
+    @media print {
+      body { background: #fff; }
+      .toolbar { display: none; }
+      .pages-wrapper { padding: 0; gap: 0; background: none; align-items: stretch; }
+      .page {
+        box-shadow: none;
+        width: 100%;
+        min-height: 0;
+        padding: 14mm 16mm 14mm;
+        page-break-after: always;
+      }
+      .page:last-child { page-break-after: auto; }
+      @page { size: A4; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Toolbar (screen only) -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <a href="/jobs/{{ job.id }}" class="btn-back">← Back</a>
+    <div>
+      <div class="toolbar-title">Leon Menzies — {{ job.title }}</div>
+      <div class="toolbar-sub">{{ job.company }} · Tailored resume</div>
+    </div>
+  </div>
+  <button class="btn-print" onclick="window.print()">Print / Save PDF</button>
+</div>
+
+<div class="pages-wrapper">
+
+  <!-- ═══════════ PAGE 1: RESUME ═══════════ -->
+  <div class="page">
+
+    <div class="resume-header">
+      <div class="resume-name">Leon Menzies</div>
+      <div class="resume-tagline">Software Engineer</div>
+      <div class="resume-contact">
+        <span>Vancouver, BC, Canada</span>
+        <a href="https://github.com/LeonMenzies">github.com/LeonMenzies</a>
+        <a href="https://linkedin.com/in/leonmenzies">linkedin.com/in/leonmenzies</a>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section">
+      <div class="section-title">Summary</div>
+      <p class="summary-text">{{ resume.summary }}</p>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section">
+      <div class="section-title">Experience</div>
+
+      <div class="exp-entry">
+        <div class="exp-header">
+          <span class="exp-title">Software Engineer</span>
+          <span class="exp-dates">Jun 2023 – Present</span>
+        </div>
+        <div class="exp-company">VoPay International · Vancouver, BC</div>
+        <ul class="exp-bullets">
+          {% for bullet in resume.vopay_bullets %}
+          <li>{{ bullet }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <hr class="divider-thin">
+
+      <div class="exp-entry">
+        <div class="exp-header">
+          <span class="exp-title">Full Stack Developer</span>
+          <span class="exp-dates">Feb 2022 – Mar 2023</span>
+        </div>
+        <div class="exp-company">New Zealand Exchange (NZX) · Wellington, NZ</div>
+        <ul class="exp-bullets">
+          {% for bullet in resume.nzx_dev_bullets %}
+          <li>{{ bullet }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <hr class="divider-thin">
+
+      <div class="exp-entry">
+        <div class="exp-header">
+          <span class="exp-title">Tester Intern</span>
+          <span class="exp-dates">Nov 2021 – Feb 2022</span>
+        </div>
+        <div class="exp-company">New Zealand Exchange (NZX) · Wellington, NZ</div>
+        <ul class="exp-bullets">
+          {% for bullet in resume.nzx_intern_bullets %}
+          <li>{{ bullet }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section">
+      <div class="section-title">Skills</div>
+      <div class="skills-grid">
+        {% for skill in resume.highlighted_skills %}
+        <div class="skill-item">{{ skill }}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section">
+      <div class="section-title">Education</div>
+      <div class="edu-degree">BSc Computer Science</div>
+      <div class="edu-school">Victoria University of Wellington · Wellington, NZ · Nov 2022</div>
+      <div class="edu-detail">GPA: 3.86/4.0 · Dean's List every year · Algorithms, System Design, Databases, ML, Cybersecurity</div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section">
+      <div class="section-title">Projects</div>
+      <div class="project-entry">
+        <span class="project-name">Jobber — </span>
+        <span class="project-desc">Personal AI-powered job search assistant. Dockerized Python/FastAPI app that scrapes job boards daily, ranks listings 0–100 against my profile using the Claude API, and generated this resume.</span>
+      </div>
+      <div class="project-entry">
+        <span class="project-name">Macro Dash — </span>
+        <span class="project-desc">Full-stack economic dashboard. Python Flask API + MySQL backend, React/TypeScript frontend, deployed on Linode with Nginx/Gunicorn and CI/CD pipelines.</span>
+      </div>
+      <div class="project-entry">
+        <span class="project-name">Fitness App — </span>
+        <span class="project-desc">Cross-platform React Native/Expo app with Flask backend, AI-generated workout plans, Sign In with Apple, and Recoil state management.</span>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Leon Menzies · github.com/LeonMenzies · linkedin.com/in/leonmenzies</span>
+      <span>Page 1 of 2</span>
+    </div>
+
+  </div>
+
+
+  <!-- ═══════════ PAGE 2: HOW I WORK ═══════════ -->
+  <div class="page">
+
+    <div class="how-header">
+      <div class="how-label">Supplementary — How I Work</div>
+      <div class="how-title">I use AI to produce significantly<br>more output. This resume is an example.</div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="how-intro">
+      <p>This resume was generated automatically. I built a tool — Jobber — that scrapes job boards daily, scores every listing against my profile using the Claude API, and tailors a resume per application. I didn't write this by hand. I was working on other things while it ran. That's the point.</p>
+      <p>Below is the setup that makes this possible, and what it means in practice as an engineer.</p>
+    </div>
+
+    <div class="two-col">
+
+      <div>
+        <div class="col-title">My Setup</div>
+        <table class="stack-table">
+          <tr>
+            <td class="stack-tool">Home Server<br>+ Claude Code</td>
+            <td class="stack-desc">I run a dedicated personal server with Claude Code active 24/7 — completely separate from work infrastructure so there's no risk bleed between personal and professional. Tailscale VPN for secure SSH access from anywhere. I develop from my iPhone; I'm doing that right now.</td>
+          </tr>
+          <tr>
+            <td class="stack-tool">Claude.ai</td>
+            <td class="stack-desc">Architecture thinking, debugging, and comms hub. Connected to Slack, Jira, and Gmail — I query tickets, draft updates, and find decisions without switching apps.</td>
+          </tr>
+          <tr>
+            <td class="stack-tool">Cowork</td>
+            <td class="stack-desc">Desktop agent managing day-to-day: meeting notes, personal information, files, and all Claude outputs. Keeps context organised automatically across sessions so nothing falls through.</td>
+          </tr>
+          <tr>
+            <td class="stack-tool">Jobber</td>
+            <td class="stack-desc">Built it myself. Python, FastAPI, Docker, PostgreSQL, Claude API. Scrapes job boards, ranks every listing 0–100, generated this resume — automatically.</td>
+          </tr>
+          <tr>
+            <td class="stack-tool">GitHub Copilot</td>
+            <td class="stack-desc">Inline completion at VoPay, paired with Claude Code across the full dev loop.</td>
+          </tr>
+        </table>
+      </div>
+
+      <div>
+        <div class="col-title">What This Means</div>
+        <div class="impact-list">
+          <div class="impact-item">
+            <div class="impact-head">More output, same hours</div>
+            <div class="impact-body">Less time on boilerplate, more on system design and hard problems. I ship features faster and take on more in a sprint.</div>
+          </div>
+          <div class="impact-item">
+            <div class="impact-head">Zero downtime between locations</div>
+            <div class="impact-body">Tailscale + iPhone means the dev environment is always with me. Commute, lunch, anywhere — the server is running and accessible.</div>
+          </div>
+          <div class="impact-item">
+            <div class="impact-head">Handles more complexity</div>
+            <div class="impact-body">Problems I'd have scoped down before — I take them on. AI helps me navigate unfamiliar codebases and debug at a pace that wouldn't otherwise be possible.</div>
+          </div>
+          <div class="impact-item">
+            <div class="impact-head">Building fluency now</div>
+            <div class="impact-body">The tooling ecosystem moves fast. I'm building Jobber, wiring MCPs, running agentic workflows — learning actively, not waiting to catch up.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <hr class="divider" style="margin: 14px 0 12px;">
+
+    <div class="col-title">Also Built Independently</div>
+    <div class="built-grid">
+      <div>
+        <span class="built-name">Jobber</span>
+        <span class="built-tech">Python · FastAPI · Docker · Claude API</span>
+        <span class="built-desc">AI job search assistant — scrapes, ranks, and generated this resume</span>
+      </div>
+      <div>
+        <span class="built-name">Macro Dash</span>
+        <span class="built-tech">Flask · MySQL · React · TypeScript</span>
+        <span class="built-desc">Full-stack economic dashboard, CI/CD deployed on Linode</span>
+      </div>
+      <div>
+        <span class="built-name">Fitness App</span>
+        <span class="built-tech">React Native · Expo · Flask · Claude API</span>
+        <span class="built-desc">Cross-platform app with AI workout plans and Sign in with Apple</span>
+      </div>
+      <div>
+        <span class="built-name">ScrumDinger</span>
+        <span class="built-tech">Swift · iOS</span>
+        <span class="built-desc">Native Scrum timer app — built to learn Swift and ship to the App Store</span>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Leon Menzies · github.com/LeonMenzies · linkedin.com/in/leonmenzies</span>
+      <span>Generated by Jobber · {{ generated_at }}</span>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

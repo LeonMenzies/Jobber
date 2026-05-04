@@ -115,6 +115,7 @@ class Profile(Base):
     tech_stack_preferences = Column(ARRAY(Text), default=list)
     open_to_contract = Column(Boolean, default=False)
     excluded_companies = Column(ARRAY(Text), default=list)
+    ai_setup_notes = Column(Text)
 
     @property
     def has_content(self) -> bool:

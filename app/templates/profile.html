@@ -176,6 +176,14 @@ Education: BSc Computer Science, UBC...">{{ profile.resume_md or '' }}</textarea
     </div>
   </div>
 
+  <!-- AI Setup Notes -->
+  <div class="card rounded-xl p-4 mb-4">
+    <h2 class="text-indigo-400 font-semibold text-sm mb-1">AI & Work Setup Notes</h2>
+    <p class="text-gray-500 text-xs mb-3">Appears on page 2 of your generated resume. Supports markdown — headings, bullet points, and tables all render correctly.</p>
+    <textarea name="ai_setup_notes" rows="10" class="input text-sm resize-none leading-relaxed font-mono"
+              placeholder="## Core Tools&#10;- Claude Code (CLI) — agentic coding on home server&#10;- Claude.ai — architecture, comms, Jira/Slack integrations&#10;&#10;## Why This Setup Works&#10;- Full context always — Claude Code sees the whole repo...">{{ profile.ai_setup_notes or '' }}</textarea>
+  </div>
+
   <button type="submit" class="btn-primary w-full text-center py-3 mb-6">Save Profile</button>
 </form>
 
