@@ -12,6 +12,18 @@ logger = logging.getLogger(__name__)
 
 scheduler = BackgroundScheduler(timezone=config.APP_TIMEZONE)
 
+_ranking_enabled: bool = True
+
+
+def get_ranking_enabled() -> bool:
+    return _ranking_enabled
+
+
+def set_ranking_enabled(value: bool) -> None:
+    global _ranking_enabled
+    _ranking_enabled = value
+    logger.info(f"[Scheduler] Ranking {'enabled' if value else 'disabled'}")
+
 
 def run_all_scrapers():
     logger.info("[Scheduler] Starting daily scrape run")
@@ -30,8 +42,11 @@ def run_all_scrapers():
     finally:
         db.close()
 
-    logger.info("[Scheduler] Scrape complete — starting ranking pass")
-    run_ranking_pass()
+    if _ranking_enabled:
+        logger.info("[Scheduler] Scrape complete — starting ranking pass")
+        run_ranking_pass()
+    else:
+        logger.info("[Scheduler] Scrape complete — ranking is disabled, skipping")
 
 
 def run_ranking_pass():

@@ -20,8 +20,134 @@
 </div>
 {% endif %}
 
-<!-- Resume form -->
-<form method="post" action="/profile">
+<form method="post" action="/profile" x-data="profileForm()" @submit="prepareSubmit">
+
+  <!-- Job Preferences questionnaire -->
+  <div class="card rounded-xl p-4 mb-4">
+    <h2 class="text-indigo-400 font-semibold text-sm mb-1">Job Preferences</h2>
+    <p class="text-gray-500 text-xs mb-4">Used by the ranker to score jobs against your actual preferences.</p>
+
+    <!-- Work Arrangement -->
+    <div class="mb-4">
+      <label class="text-gray-300 text-xs font-medium block mb-2">Work arrangement</label>
+      <div class="flex flex-wrap gap-2">
+        <template x-for="opt in options.work_arrangement" :key="opt.value">
+          <button type="button"
+            @click="toggle('work_arrangement', opt.value)"
+            :class="isSelected('work_arrangement', opt.value) ? 'chip-on' : 'chip-off'"
+            x-text="opt.label">
+          </button>
+        </template>
+      </div>
+      <input type="hidden" name="work_arrangement" :value="JSON.stringify(selected.work_arrangement)">
+    </div>
+
+    <!-- Seniority -->
+    <div class="mb-4">
+      <label class="text-gray-300 text-xs font-medium block mb-2">Seniority target</label>
+      <div class="flex flex-wrap gap-2">
+        <template x-for="opt in options.seniority_levels" :key="opt.value">
+          <button type="button"
+            @click="toggle('seniority_levels', opt.value)"
+            :class="isSelected('seniority_levels', opt.value) ? 'chip-on' : 'chip-off'"
+            x-text="opt.label">
+          </button>
+        </template>
+      </div>
+      <input type="hidden" name="seniority_levels" :value="JSON.stringify(selected.seniority_levels)">
+    </div>
+
+    <!-- Company Size -->
+    <div class="mb-4">
+      <label class="text-gray-300 text-xs font-medium block mb-2">Company size preference</label>
+      <div class="flex flex-wrap gap-2">
+        <template x-for="opt in options.company_sizes" :key="opt.value">
+          <button type="button"
+            @click="toggle('company_sizes', opt.value)"
+            :class="isSelected('company_sizes', opt.value) ? 'chip-on' : 'chip-off'"
+            x-text="opt.label">
+          </button>
+        </template>
+      </div>
+      <input type="hidden" name="company_sizes" :value="JSON.stringify(selected.company_sizes)">
+    </div>
+
+    <!-- Preferred Industries -->
+    <div class="mb-4">
+      <label class="text-gray-300 text-xs font-medium block mb-2">Preferred industries</label>
+      <div class="flex flex-wrap gap-2">
+        <template x-for="opt in options.industries" :key="opt.value">
+          <button type="button"
+            @click="toggle('preferred_industries', opt.value)"
+            :class="isSelected('preferred_industries', opt.value) ? 'chip-on' : 'chip-off'"
+            x-text="opt.label">
+          </button>
+        </template>
+      </div>
+      <input type="hidden" name="preferred_industries" :value="JSON.stringify(selected.preferred_industries)">
+    </div>
+
+    <!-- Excluded Industries -->
+    <div class="mb-4">
+      <label class="text-gray-300 text-xs font-medium block mb-2">Industries to avoid</label>
+      <div class="flex flex-wrap gap-2">
+        <template x-for="opt in options.industries" :key="opt.value">
+          <button type="button"
+            @click="toggle('excluded_industries', opt.value)"
+            :class="isSelected('excluded_industries', opt.value) ? 'chip-on chip-red' : 'chip-off'"
+            x-text="opt.label">
+          </button>
+        </template>
+      </div>
+      <input type="hidden" name="excluded_industries" :value="JSON.stringify(selected.excluded_industries)">
+    </div>
+
+    <!-- Tech Stack -->
+    <div class="mb-4">
+      <label class="text-gray-300 text-xs font-medium block mb-2">Tech stack preferences</label>
+      <div class="flex flex-wrap gap-2">
+        <template x-for="opt in options.tech_stack" :key="opt.value">
+          <button type="button"
+            @click="toggle('tech_stack_preferences', opt.value)"
+            :class="isSelected('tech_stack_preferences', opt.value) ? 'chip-on' : 'chip-off'"
+            x-text="opt.label">
+          </button>
+        </template>
+      </div>
+      <input type="hidden" name="tech_stack_preferences" :value="JSON.stringify(selected.tech_stack_preferences)">
+    </div>
+
+    <!-- Open to Contract -->
+    <div class="mb-4 flex items-center gap-3">
+      <label class="text-gray-300 text-xs font-medium">Open to contract / freelance roles?</label>
+      <button type="button"
+        @click="selected.open_to_contract = !selected.open_to_contract"
+        :class="selected.open_to_contract ? 'chip-on' : 'chip-off'"
+        x-text="selected.open_to_contract ? 'Yes' : 'No'">
+      </button>
+      <input type="hidden" name="open_to_contract" :value="selected.open_to_contract ? 'true' : 'false'">
+    </div>
+
+    <!-- Minimum Salary -->
+    <div class="mb-4">
+      <label class="text-gray-300 text-xs font-medium block mb-2">Minimum salary (CAD/year)</label>
+      <input type="number" name="salary_min_cad" min="0" step="5000"
+             value="{{ profile.salary_min_cad or '' }}"
+             class="input text-sm" placeholder="e.g. 90000" />
+    </div>
+
+    <!-- Excluded Companies -->
+    <div>
+      <label class="text-gray-300 text-xs font-medium block mb-2">Companies to exclude</label>
+      <input type="text" name="excluded_companies"
+             value="{{ (profile.excluded_companies or []) | join(', ') }}"
+             class="input text-sm"
+             placeholder="e.g. Amazon, Meta, Google (comma-separated)" />
+      <p class="text-gray-600 text-xs mt-1">Jobs from these companies will be scored very low.</p>
+    </div>
+  </div>
+
+  <!-- Resume form -->
   <div class="card rounded-xl p-4 mb-4">
     <h2 class="text-indigo-400 font-semibold text-sm mb-2">Resume / Experience</h2>
     <p class="text-gray-500 text-xs mb-3">Paste your resume, LinkedIn summary, or a description of your experience. Plain text or markdown.</p>
@@ -48,6 +174,14 @@ Education: BSc Computer Science, UBC...">{{ profile.resume_md or '' }}</textarea
                   placeholder="e.g. I prefer startups, avoid banking/finance, strong preference for TypeScript...">{{ profile.notes or '' }}</textarea>
       </div>
     </div>
+  </div>
+
+  <!-- AI Setup Notes -->
+  <div class="card rounded-xl p-4 mb-4">
+    <h2 class="text-indigo-400 font-semibold text-sm mb-1">AI & Work Setup Notes</h2>
+    <p class="text-gray-500 text-xs mb-3">Appears on page 2 of your generated resume. Supports markdown — headings, bullet points, and tables all render correctly.</p>
+    <textarea name="ai_setup_notes" rows="10" class="input text-sm resize-none leading-relaxed font-mono"
+              placeholder="## Core Tools&#10;- Claude Code (CLI) — agentic coding on home server&#10;- Claude.ai — architecture, comms, Jira/Slack integrations&#10;&#10;## Why This Setup Works&#10;- Full context always — Claude Code sees the whole repo...">{{ profile.ai_setup_notes or '' }}</textarea>
   </div>
 
   <button type="submit" class="btn-primary w-full text-center py-3 mb-6">Save Profile</button>
@@ -92,15 +226,118 @@ Education: BSc Computer Science, UBC...">{{ profile.resume_md or '' }}</textarea
   </form>
 </div>
 
-<!-- Target info display -->
+<!-- Search Configuration (now dynamic) -->
 <div class="card rounded-xl p-4 mb-4">
   <h2 class="text-gray-400 font-semibold text-sm mb-2">Search Configuration</h2>
   <div class="space-y-1 text-xs text-gray-500">
     <p><span class="text-gray-300">Target roles:</span> Software Developer, Software Engineer, Full Stack Developer/Engineer</p>
     <p><span class="text-gray-300">Location:</span> Vancouver, BC, Canada</p>
-    <p><span class="text-gray-300">Work type:</span> On-site or Hybrid</p>
-    <p><span class="text-gray-300">Salary filter:</span> None</p>
+    <p><span class="text-gray-300">Work type:</span>
+      {% if profile and profile.work_arrangement %}
+        {{ profile.work_arrangement | join(', ') }}
+      {% else %}
+        On-site or Hybrid
+      {% endif %}
+    </p>
+    <p><span class="text-gray-300">Min salary:</span>
+      {% if profile and profile.salary_min_cad %}
+        ${{ "{:,}".format(profile.salary_min_cad) }} CAD
+      {% else %}
+        None set
+      {% endif %}
+    </p>
   </div>
 </div>
+
+<script>
+function profileForm() {
+  // Seed saved values from server
+  const saved = {
+    work_arrangement:       {{ (profile.work_arrangement or []) | tojson }},
+    seniority_levels:       {{ (profile.seniority_levels or []) | tojson }},
+    preferred_industries:   {{ (profile.preferred_industries or []) | tojson }},
+    excluded_industries:    {{ (profile.excluded_industries or []) | tojson }},
+    company_sizes:          {{ (profile.company_sizes or []) | tojson }},
+    tech_stack_preferences: {{ (profile.tech_stack_preferences or []) | tojson }},
+    open_to_contract:       {{ 'true' if profile and profile.open_to_contract else 'false' }},
+  };
+
+  return {
+    selected: {
+      work_arrangement:       saved.work_arrangement,
+      seniority_levels:       saved.seniority_levels,
+      preferred_industries:   saved.preferred_industries,
+      excluded_industries:    saved.excluded_industries,
+      company_sizes:          saved.company_sizes,
+      tech_stack_preferences: saved.tech_stack_preferences,
+      open_to_contract:       saved.open_to_contract,
+    },
+    options: {
+      work_arrangement: [
+        { value: 'on-site',  label: 'On-site' },
+        { value: 'hybrid',   label: 'Hybrid' },
+        { value: 'remote',   label: 'Remote' },
+      ],
+      seniority_levels: [
+        { value: 'junior',        label: 'Junior' },
+        { value: 'intermediate',  label: 'Intermediate' },
+        { value: 'senior',        label: 'Senior' },
+        { value: 'lead',          label: 'Lead' },
+      ],
+      company_sizes: [
+        { value: 'startup',    label: 'Startup (<50)' },
+        { value: 'scale-up',   label: 'Scale-up (50–200)' },
+        { value: 'mid-size',   label: 'Mid-size (200–1k)' },
+        { value: 'enterprise', label: 'Enterprise (1k+)' },
+      ],
+      industries: [
+        { value: 'fintech',     label: 'Fintech' },
+        { value: 'saas',        label: 'SaaS' },
+        { value: 'e-commerce',  label: 'E-commerce' },
+        { value: 'gaming',      label: 'Gaming' },
+        { value: 'health-tech', label: 'Health-tech' },
+        { value: 'ai-ml',       label: 'AI/ML' },
+        { value: 'consulting',  label: 'Consulting' },
+        { value: 'government',  label: 'Government' },
+        { value: 'banking',     label: 'Banking' },
+        { value: 'other',       label: 'Other' },
+      ],
+      tech_stack: [
+        { value: 'python',     label: 'Python' },
+        { value: 'typescript', label: 'TypeScript' },
+        { value: 'javascript', label: 'JavaScript' },
+        { value: 'react',      label: 'React' },
+        { value: 'node.js',    label: 'Node.js' },
+        { value: 'php',        label: 'PHP' },
+        { value: 'ruby',       label: 'Ruby' },
+        { value: 'java',       label: 'Java' },
+        { value: 'go',         label: 'Go' },
+        { value: 'rust',       label: 'Rust' },
+        { value: 'aws',        label: 'AWS' },
+        { value: 'gcp',        label: 'GCP' },
+        { value: 'azure',      label: 'Azure' },
+      ],
+    },
+
+    toggle(field, value) {
+      const arr = this.selected[field];
+      const idx = arr.indexOf(value);
+      if (idx === -1) {
+        arr.push(value);
+      } else {
+        arr.splice(idx, 1);
+      }
+    },
+
+    isSelected(field, value) {
+      return this.selected[field].includes(value);
+    },
+
+    prepareSubmit() {
+      // hidden inputs are already bound via :value — nothing extra needed
+    },
+  };
+}
+</script>
 
 {% endblock %}

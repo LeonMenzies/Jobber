@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Request, Form
@@ -10,6 +11,19 @@ from models import Profile, CompanyWatchlist
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+
+
+def _parse_array(value: str) -> list[str]:
+    """Parse a JSON array string from a hidden input, returning [] on failure."""
+    if not value or not value.strip():
+        return []
+    try:
+        parsed = json.loads(value)
+        if isinstance(parsed, list):
+            return [str(v) for v in parsed if v]
+        return []
+    except (json.JSONDecodeError, TypeError):
+        return []
 
 
 @router.get("/profile", response_class=HTMLResponse)
@@ -29,6 +43,16 @@ def save_profile(
     resume_md: str = Form(""),
     experience_years: str = Form(""),
     notes: str = Form(""),
+    work_arrangement: str = Form("[]"),
+    seniority_levels: str = Form("[]"),
+    preferred_industries: str = Form("[]"),
+    excluded_industries: str = Form("[]"),
+    company_sizes: str = Form("[]"),
+    salary_min_cad: str = Form(""),
+    tech_stack_preferences: str = Form("[]"),
+    open_to_contract: str = Form("false"),
+    excluded_companies: str = Form(""),
+    ai_setup_notes: str = Form(""),
     db: Session = Depends(get_db),
 ):
     profile = db.query(Profile).filter_by(id=1).first()
@@ -42,6 +66,29 @@ def save_profile(
     except ValueError:
         profile.experience_years = None
     profile.notes = notes.strip() or None
+
+    profile.work_arrangement = _parse_array(work_arrangement)
+    profile.seniority_levels = _parse_array(seniority_levels)
+    profile.preferred_industries = _parse_array(preferred_industries)
+    profile.excluded_industries = _parse_array(excluded_industries)
+    profile.company_sizes = _parse_array(company_sizes)
+
+    try:
+        profile.salary_min_cad = int(salary_min_cad) if salary_min_cad.strip() else None
+    except ValueError:
+        profile.salary_min_cad = None
+
+    profile.tech_stack_preferences = _parse_array(tech_stack_preferences)
+    profile.open_to_contract = open_to_contract.lower() in ("true", "1", "yes", "on")
+
+    # excluded_companies is submitted as comma-separated text
+    if excluded_companies.strip():
+        profile.excluded_companies = [c.strip() for c in excluded_companies.split(",") if c.strip()]
+    else:
+        profile.excluded_companies = []
+
+    profile.ai_setup_notes = ai_setup_notes.strip() or None
+
     profile.updated_at = datetime.now(timezone.utc)
     db.commit()
 

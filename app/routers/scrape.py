@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from database import get_db, SessionLocal
 from models import ScrapeRun
 import scheduler as sched
+from scheduler import get_ranking_enabled, set_ranking_enabled
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -33,6 +34,7 @@ def scrape_page(request: Request, db: Session = Depends(get_db)):
         "runs": runs,
         "next_run": next_run,
         "is_running": not _scrape_lock.locked() is False,
+        "ranking_enabled": get_ranking_enabled(),
     })
 
 
@@ -56,6 +58,9 @@ def trigger_scrape():
 @router.post("/scrape/rank")
 def trigger_rank():
     """Trigger a ranking pass in background."""
+    if not get_ranking_enabled():
+        return JSONResponse({"ok": False, "message": "Ranking is disabled"}, status_code=409)
+
     def _run():
         from ranker import rank_unranked_jobs
         db = SessionLocal()
@@ -66,6 +71,13 @@ def trigger_rank():
 
     threading.Thread(target=_run, daemon=True).start()
     return JSONResponse({"ok": True, "message": "Ranking pass started"})
+
+
+@router.post("/scrape/rank/toggle")
+def toggle_ranking():
+    enabled = not get_ranking_enabled()
+    set_ranking_enabled(enabled)
+    return JSONResponse({"ok": True, "enabled": enabled})
 
 
 @router.get("/scrape/status")

@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -91,6 +92,31 @@ def update_status(job_id: int, body: StatusUpdate, db: Session = Depends(get_db)
 
     db.commit()
     return {"ok": True, "status": job.status}
+
+
+@router.get("/jobs/{job_id}/resume", response_class=HTMLResponse)
+def resume_page(request: Request, job_id: int, db: Session = Depends(get_db)):
+    job = db.query(Job).filter_by(id=job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    profile = db.query(Profile).filter_by(id=1).first()
+    from resume_generator import generate_resume
+    try:
+        resume = generate_resume(job, profile)
+    except Exception as exc:
+        logger.error(f"[ResumeGenerator] Failed for job {job_id}: {exc}")
+        raise HTTPException(status_code=500, detail=f"Resume generation failed: {exc}")
+
+    ai_setup_notes = getattr(profile, "ai_setup_notes", None) or ""
+    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    return templates.TemplateResponse(request, "resume.html", {
+        "job": job,
+        "resume": resume,
+        "ai_setup_notes": ai_setup_notes,
+        "generated_at": generated_at,
+    })
 
 
 @router.post("/jobs/{job_id}/generate-application")
